@@ -1,4 +1,4 @@
-name: Contracts Tests
+name: main
 
 # This workflow:
 # - Runs the Foundry tests
