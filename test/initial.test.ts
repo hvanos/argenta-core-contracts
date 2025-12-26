@@ -1,11 +1,17 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
-const ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-
 describe("ArgentaVault basic CDP flow", function () {
   it("open vault, add ETH collateral, borrow, repay, close", async () => {
     const [deployer, user] = await ethers.getSigners();
+
+    const MockWETH = await ethers.getContractFactory("MockWETH");
+    const weth = await MockWETH.connect(deployer).deploy();
+    await weth.waitForDeployment();
+
+    const MockAggregator = await ethers.getContractFactory("MockAggregator");
+    const ethAgg = await MockAggregator.connect(deployer).deploy("200000000000", 8);
+    await ethAgg.waitForDeployment();
 
     const Stablecoin = await ethers.getContractFactory("Stablecoin");
     const stable = await Stablecoin.connect(deployer).deploy("Argenta USD", "USDa");
@@ -49,16 +55,15 @@ describe("ArgentaVault basic CDP flow", function () {
     await vault.waitForDeployment();
 
     await (await debtEngine.connect(deployer).setVault(await vault.getAddress())).wait();
-    
-    await registry.setCollateral(ETH, 15000, 13000, ethers.parseEther("100000"), true);
-    await oracle.setFeed(ETH, await ethAgg.getAddress(), 8, true);
-    await vault.addCollateral(vaultId, ETH, ethers.parseEther("1"), { value: ethers.parseEther("1") });
 
-    const MockAggregator = await ethers.getContractFactory("MockAggregator");
-    const ethAgg = await MockAggregator.connect(deployer).deploy("200000000000", 8);
-    await ethAgg.waitForDeployment();
-
-    await (await oracle.connect(deployer).setFeed(ethers.ZeroAddress, await ethAgg.getAddress(), 8, true)).wait();
+    await registry.connect(deployer).setCollateral(
+      await weth.getAddress(),
+      15000,
+      13000,
+      ethers.parseEther("100000"),
+      true
+    );
+    await oracle.connect(deployer).setFeed(await weth.getAddress(), await ethAgg.getAddress(), 8, true);
 
     const tx = await vault.connect(user).openVault();
     const rc = await tx.wait();
@@ -66,11 +71,13 @@ describe("ArgentaVault basic CDP flow", function () {
       ?.map((l: any) => { try { return vault.interface.parseLog(l); } catch { return null; } })
       ?.find((x: any) => x && x.name === "VaultOpened")?.args?.vaultId;
 
+    const collateralAmount = ethers.parseEther("1");
+    await weth.connect(user).mint(await user.getAddress(), collateralAmount);
+    await weth.connect(user).approve(await vault.getAddress(), collateralAmount);
     await (await vault.connect(user).addCollateral(
       vaultId,
-      ethers.ZeroAddress,
-      ethers.parseEther("1"),
-      { value: ethers.parseEther("1") }
+      await weth.getAddress(),
+      collateralAmount
     )).wait();
 
     const borrowAmount = ethers.parseEther("500");

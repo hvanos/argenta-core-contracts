@@ -21,7 +21,7 @@ describe("SessionPermissionVerifier + SessionExecutor", function () {
     await target.waitForDeployment();
 
     // Compute selector for ping(uint256)
-    const selector = target.interface.getFunction("ping(uint256)").selector;
+    const selector = ethers.dataSlice(target.interface.encodeFunctionData("ping", [0]), 0, 4);
 
     // user grants permission: target + selector
     await verifier.connect(user).grantPermission(await target.getAddress(), selector, 0);
@@ -55,7 +55,9 @@ describe("SessionPermissionVerifier + SessionExecutor", function () {
     const target = await MockTarget.connect(owner).deploy();
     await target.waitForDeployment();
 
-    // user does NOT grant permission
+    const selector = ethers.dataSlice(target.interface.encodeFunctionData("ping", [0]), 0, 4);
+
+    // user does NOT grant permission for this selector+target pairing
 
     const data = target.interface.encodeFunctionData("ping", [999]);
 
@@ -79,7 +81,7 @@ describe("SessionPermissionVerifier + SessionExecutor", function () {
     const target = await MockTarget.connect(owner).deploy();
     await target.waitForDeployment();
 
-    const selector = target.interface.getFunction("ping(uint256)").selector;
+    const selector = ethers.dataSlice(target.interface.encodeFunctionData("ping", [0]), 0, 4);
 
     const now = (await ethers.provider.getBlock("latest")).timestamp;
     const expiry = now + 5; // 5 seconds
@@ -114,7 +116,7 @@ describe("SessionPermissionVerifier + SessionExecutor", function () {
     const target = await MockTarget.connect(owner).deploy();
     await target.waitForDeployment();
 
-    const selector = target.interface.getFunction("ping(uint256)").selector;
+    const selector = ethers.dataSlice(target.interface.encodeFunctionData("ping", [0]), 0, 4);
 
     // grant permission id=0 (first permission)
     await verifier.connect(user).grantPermission(await target.getAddress(), selector, 0);
