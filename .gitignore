@@ -1,0 +1,9 @@
+node_modules
+dist
+cache
+artifacts
+.env
+.env*
+coverage
+test-coverage
+.DS_Store

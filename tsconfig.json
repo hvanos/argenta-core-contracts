@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "es2019",
+    "module": "commonjs",
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "types": ["node", "mocha"],
+    "typeRoots": ["node_modules/@types"],
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["./scripts", "./test", "./hardhat.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}
