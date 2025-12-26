@@ -5,6 +5,10 @@ describe("Argenta ArgentaVault", function () {
   it("should allow opening a vault, depositing collateral, borrowing and repaying", async () => {
     const [owner, other] = await ethers.getSigners();
 
+    const MockWETH = await ethers.getContractFactory("MockWETH");
+    const weth = await MockWETH.connect(owner).deploy();
+    await weth.waitForDeployment();
+
     const Stablecoin = await ethers.getContractFactory("Stablecoin");
     const stable = await Stablecoin.connect(owner).deploy("Argenta USD", "USDa");
     await stable.waitForDeployment();
@@ -14,7 +18,7 @@ describe("Argenta ArgentaVault", function () {
     await collRegistry.waitForDeployment();
 
     await (await collRegistry.connect(owner).setCollateral(
-      ethers.ZeroAddress,
+      await weth.getAddress(),
       15000,
       13000,
       ethers.parseEther("100000"),
@@ -41,7 +45,7 @@ describe("Argenta ArgentaVault", function () {
     const mockAggregator = await MockAggregator.connect(owner).deploy("200000000000", 8);
     await mockAggregator.waitForDeployment();
 
-    await (await oracle.connect(owner).setFeed(ethers.ZeroAddress, await mockAggregator.getAddress(), 8, true)).wait();
+    await (await oracle.connect(owner).setFeed(await weth.getAddress(), await mockAggregator.getAddress(), 8, true)).wait();
 
     const DebtEngine = await ethers.getContractFactory("DebtEngine");
     const debtEngine = await DebtEngine.connect(owner).deploy(await stable.getAddress());
@@ -68,11 +72,13 @@ describe("Argenta ArgentaVault", function () {
       .find((x: any) => x && x.name === "VaultOpened");
     const vaultId = parsed!.args.vaultId;
 
+    const depositAmount = ethers.parseEther("1");
+    await weth.connect(other).mint(await other.getAddress(), depositAmount);
+    await weth.connect(other).approve(await cdpVault.getAddress(), depositAmount);
     await (await cdpVault.connect(other).addCollateral(
       vaultId,
-      ethers.ZeroAddress,
-      ethers.parseEther("1"),
-      { value: ethers.parseEther("1") }
+      await weth.getAddress(),
+      depositAmount
     )).wait();
 
     const borrowAmount = ethers.parseEther("500");
