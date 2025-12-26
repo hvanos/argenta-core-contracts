@@ -7,3 +7,4 @@ artifacts
 coverage
 test-coverage
 .DS_Store
+typechain-types/
