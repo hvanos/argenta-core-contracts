@@ -24,7 +24,7 @@ describe("SessionPermissionVerifier + SessionExecutor", function () {
     const selector = ethers.dataSlice(target.interface.encodeFunctionData("ping", [0]), 0, 4);
 
     // user grants permission: target + selector
-    await verifier.connect(user).grantPermission(await target.getAddress(), selector, 0);
+    await (await verifier.connect(user).grantPermission(await target.getAddress(), selector, 0)).wait();
 
     // prepare calldata for ping(123)
     const data = target.interface.encodeFunctionData("ping", [123]);
@@ -85,7 +85,7 @@ describe("SessionPermissionVerifier + SessionExecutor", function () {
 
     const now = (await ethers.provider.getBlock("latest")).timestamp;
     const expiry = now + 5; // 5 seconds
-    await verifier.connect(user).grantPermission(await target.getAddress(), selector, expiry);
+    await (await verifier.connect(user).grantPermission(await target.getAddress(), selector, expiry)).wait();
 
     const data = target.interface.encodeFunctionData("ping", [1]);
 
@@ -119,7 +119,7 @@ describe("SessionPermissionVerifier + SessionExecutor", function () {
     const selector = ethers.dataSlice(target.interface.encodeFunctionData("ping", [0]), 0, 4);
 
     // grant permission id=0 (first permission)
-    await verifier.connect(user).grantPermission(await target.getAddress(), selector, 0);
+    await (await verifier.connect(user).grantPermission(await target.getAddress(), selector, 0)).wait();
 
     const data = target.interface.encodeFunctionData("ping", [777]);
 
@@ -127,7 +127,7 @@ describe("SessionPermissionVerifier + SessionExecutor", function () {
     await executor.connect(agent).execute(await user.getAddress(),await target.getAddress(), data);
 
     // revoke permission id=0
-    await verifier.connect(user).revokePermission(0);
+    await (await verifier.connect(user).revokePermission(0)).wait();
 
     await expect(
       executor.connect(agent).execute(await user.getAddress(),await target.getAddress(), data)
